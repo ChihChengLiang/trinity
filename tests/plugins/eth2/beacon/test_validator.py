@@ -154,17 +154,26 @@ async def test_validator_propose_block_succeeds(event_loop, event_bus):
             return True
         return False
 
-    slot, proposer_index = _get_slot_with_validator_selected(
+    proposing_slot, proposer_index = _get_slot_with_validator_selected(
         is_desired_proposer_index=is_desired_proposer_index,
         start_slot=state.slot + 1,
         state=state,
         state_machine=state_machine,
     )
+    init_slot = state.slot
+    for slot in range(init_slot, proposing_slot - 1):
+        alice.skip_block(
+            slot=slot,
+            state=state,
+            state_machine=state_machine,
+        )
+        state_machine = alice.chain.get_state_machine()
+        state = state_machine.state
 
     head = alice.chain.get_canonical_head()
     block = alice.propose_block(
         proposer_index=proposer_index,
-        slot=slot,
+        slot=proposing_slot,
         state=state,
         state_machine=state_machine,
         head_block=head,
@@ -395,7 +404,7 @@ async def test_validator_include_ready_attestations(event_loop, event_bus, monke
     state_machine = alice.chain.get_state_machine()
     state = state_machine.state
 
-    attesting_slot = state.slot + 1
+    attesting_slot = state.slot
     attestations = await alice.attest(attesting_slot)
 
     # Mock `get_ready_attestations_fn` so it returns the attestation alice
@@ -411,6 +420,16 @@ async def test_validator_include_ready_attestations(event_loop, event_bus, monke
         state_machine.config,
     )
 
+    # Skip the MIN_ATTESTATION_INCLUSION_DELAY slots
+    # so the proposing block is built on the correct state
+    for slot in range(attesting_slot, proposing_slot - 1):
+        alice.skip_block(
+            slot=slot,
+            state=state,
+            state_machine=state_machine,
+        )
+        state_machine = alice.chain.get_state_machine()
+        state = state_machine.state
     head = alice.chain.get_canonical_head()
     block = alice.propose_block(
         proposer_index=proposer_index,
