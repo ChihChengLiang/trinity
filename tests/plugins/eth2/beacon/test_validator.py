@@ -422,3 +422,41 @@ async def test_validator_include_ready_attestations(event_loop, event_bus, monke
 
     # Check that attestation is included in the proposed block.
     assert attestations[0] in block.body.attestations
+
+
+@pytest.mark.asyncio
+async def test_skip_then_propose_block(event_loop, event_bus):
+    alice, bob = await get_linked_validators(event_loop=event_loop, event_bus=event_bus)
+    state_machine = alice.chain.get_state_machine()
+    state = state_machine.state
+
+    # keep trying future slots, until alice is a proposer.
+    def is_desired_proposer_index(proposer_index):
+        if proposer_index in alice.validator_privkeys:
+            return True
+        return False
+
+    slot, proposer_index = _get_slot_with_validator_selected(
+        is_desired_proposer_index=is_desired_proposer_index,
+        start_slot=state.slot + 1,
+        state=state,
+        state_machine=state_machine,
+    )
+
+    alice.skip_block(
+        slot=slot,
+        state=state,
+        state_machine=state_machine,
+    )
+
+    state_machine = alice.chain.get_state_machine()
+    state = state_machine.state
+
+    head = alice.chain.get_canonical_head()
+    alice.propose_block(
+        proposer_index=proposer_index,
+        slot=slot,
+        state=state,
+        state_machine=state_machine,
+        head_block=head,
+    )
