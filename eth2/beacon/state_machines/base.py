@@ -150,8 +150,17 @@ class BeaconStateMachine(BaseBeaconStateMachine):
     def import_block(self,
                      block: BaseBeaconBlock,
                      check_proposer_signature: bool=True) -> Tuple[BeaconState, BaseBeaconBlock]:
+        parent_block = self.chaindb.get_block_by_root(
+            block.previous_block_root,
+            self.get_block_class(),
+        )
+        pre_state = self.chaindb.get_state_by_root(
+            parent_block.state_root,
+            self.get_state_class()
+        )
+
         state = self.state_transition.apply_state_transition(
-            self.state,
+            pre_state,
             block,
             check_proposer_signature,
         )
