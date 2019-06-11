@@ -362,6 +362,7 @@ class BCCReceiveServer(BaseReceiveServer):
         # Validate attestations
         valid_attestations = self._validate_attestations(attestations)
         if len(valid_attestations) == 0:
+            self.logger.debug("No valid attestation in %s", attestations)
             return
 
         # Check if attestations has been seen already.
@@ -373,6 +374,7 @@ class BCCReceiveServer(BaseReceiveServer):
             )
         )
         if len(valid_new_attestations) == 0:
+            self.logger.debug("No new attestation in %s", valid_new_attestations)
             return
         # Add the valid and new attestations to attestation pool.
         self.attestation_pool.batch_add(valid_new_attestations)

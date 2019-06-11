@@ -26,6 +26,9 @@ from eth2.beacon.typing import (
 from .state_transitions import (
     BaseStateTransition,
 )
+from eth2.beacon.db.exceptions import (
+    StateSlotNotFound,
+)
 
 
 class BaseBeaconStateMachine(Configurable, ABC):
@@ -100,11 +103,19 @@ class BeaconStateMachine(BaseBeaconStateMachine):
 
     @property
     def state(self) -> BeaconState:
+
         if self._state is None:
-            self._state = self.chaindb.get_state_by_slot(
-                self.slot,
-                self.get_state_class()
-            )
+            try:
+                self._state = self.chaindb.get_state_by_slot(
+                    self.slot,
+                    self.get_state_class()
+                )
+            except StateSlotNotFound:
+                head_state_slot = self.chaindb.get_head_state_slot()
+                self._state = self.chaindb.get_state_by_slot(
+                    head_state_slot,
+                    self.get_state_class(),
+                )
         return self._state
 
     @classmethod

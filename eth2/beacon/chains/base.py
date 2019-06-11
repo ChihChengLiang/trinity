@@ -26,7 +26,6 @@ from eth_typing import (
 )
 from eth_utils import (
     ValidationError,
-    encode_hex,
 )
 
 from eth2._utils.ssz import (
@@ -36,6 +35,9 @@ from eth2.beacon.db.chain import (
     BaseBeaconChainDB,
     BeaconChainDB,
 )
+from eth2.beacon.enums import (
+    SignatureDomain,
+)
 from eth2.beacon.exceptions import (
     BlockClassError,
     StateMachineNotFound,
@@ -43,11 +45,21 @@ from eth2.beacon.exceptions import (
 from eth2.beacon.fork_choice import (
     ForkChoiceScoring,
 )
+from eth2.beacon.tools.builder.proposer import (
+    _generate_randao_reveal,
+    validate_proposer_index,
+)
+from eth2.beacon.tools.builder.validator import (
+    sign_transaction,
+)
 from eth2.beacon.types.attestations import (
     Attestation,
 )
 from eth2.beacon.types.blocks import (
     BaseBeaconBlock,
+)
+from eth2.beacon.types.eth1_data import (
+    Eth1Data,
 )
 from eth2.beacon.types.states import (
     BeaconState,
@@ -384,6 +396,57 @@ class BeaconChain(BaseBeaconChain):
         """
         return self.chaindb.get_canonical_block_root(slot)
 
+    def build_block_on_slot(self,
+                            slot,
+                            attestations,
+                            privkey,
+                            proposer_index,
+                            check_proposer_index: bool=True) -> BaseBeaconBlock:
+        state_machine = self.get_state_machine()
+        state = state_machine.state
+        config = state_machine.config
+        # Check proposer
+        if check_proposer_index:
+            validate_proposer_index(state, config, slot, proposer_index)
+
+        # Prepare block: slot and previous_block_root
+        block = state_machine.block_class.create_empty_block()
+
+        # TODO: Add more operations
+        randao_reveal = _generate_randao_reveal(privkey, slot, state.fork, config)
+        eth1_data = Eth1Data.create_empty_data()
+        body = block.block_body_class.create_empty_body().copy(
+            randao_reveal=randao_reveal,
+            eth1_data=eth1_data,
+            attestations=attestations,
+        )
+
+        block = block.copy(
+            slot=slot,
+            previous_block_root=state.latest_block_header.signing_root,
+            body=body,
+        )
+
+        print("before:", block, block.state_root)
+        # Apply state transition to get state root
+        _, block = state_machine.import_block(block, check_proposer_signature=False)
+        print("after:", block, block.state_root)
+        # Sign
+        signature = sign_transaction(
+            message_hash=block.signing_root,
+            privkey=privkey,
+            fork=state.fork,
+            slot=slot,
+            signature_domain=SignatureDomain.DOMAIN_BEACON_BLOCK,
+            slots_per_epoch=config.SLOTS_PER_EPOCH,
+        )
+
+        block = block.copy(
+            signature=signature,
+        )
+
+        return block
+
     def import_block(
             self,
             block: BaseBeaconBlock,
@@ -438,11 +501,7 @@ class BeaconChain(BaseBeaconChain):
             fork_choice_scoring,
         )
 
-        self.logger.debug(
-            'IMPORTED_BLOCK: slot %s | signed root %s',
-            imported_block.slot,
-            encode_hex(imported_block.signing_root),
-        )
+        self.logger.debug('IMPORTED_BLOCK: %s', imported_block)
 
         return imported_block, new_canonical_blocks, old_canonical_blocks
 

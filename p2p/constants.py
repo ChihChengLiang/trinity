@@ -34,7 +34,7 @@ HEADER_LEN = 16
 MAC_LEN = 16
 
 # The amount of seconds a connection can be idle.
-CONN_IDLE_TIMEOUT = 30
+CONN_IDLE_TIMEOUT = 60
 
 # Timeout used when waiting for a reply from a remote node.
 REPLY_TIMEOUT = 3

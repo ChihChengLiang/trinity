@@ -166,7 +166,8 @@ class BaseBeaconBlock(ssz.SignedSerializable, Configurable, ABC):
         return (
             f'<Block #{self.slot} '
             f'signing_root={encode_hex(self.signing_root)[2:10]} '
-            f'root={encode_hex(self.root)[2:10]}>'
+            f'root={encode_hex(self.root)[2:10]} '
+            f'attestation={self.num_attestations}>'
         )
 
     @property
@@ -196,9 +197,9 @@ class BaseBeaconBlock(ssz.SignedSerializable, Configurable, ABC):
         raise NotImplementedError("Must be implemented by subclasses")
 
     @classmethod
-    def create_empty_block(cls, genesis_slot: Slot) -> 'BaseBeaconBlock':
+    def create_empty_block(cls) -> 'BaseBeaconBlock':
         return cls(
-            slot=genesis_slot,
+            slot=0,
             previous_block_root=ZERO_HASH32,
             state_root=ZERO_HASH32,
             body=BeaconBlockBody.create_empty_body(),

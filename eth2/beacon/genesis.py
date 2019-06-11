@@ -49,7 +49,8 @@ from eth2.configs import (
 def get_genesis_block(genesis_state_root: Hash32,
                       genesis_slot: Slot,
                       block_class: Type[BaseBeaconBlock]) -> BaseBeaconBlock:
-    return block_class.create_empty_block(genesis_slot).copy(
+    return block_class.create_empty_block().copy(
+        slot=genesis_slot,
         state_root=genesis_state_root,
     )
 
@@ -108,7 +109,9 @@ def get_genesis_beacon_state(*,
         latest_active_index_roots=(ZERO_HASH32,) * config.LATEST_ACTIVE_INDEX_ROOTS_LENGTH,
         latest_slashed_balances=(Gwei(0),) * config.LATEST_SLASHED_EXIT_LENGTH,
         latest_block_header=get_temporary_block_header(
-            BeaconBlock.create_empty_block(config.GENESIS_SLOT),
+            BeaconBlock.create_empty_block().copy(
+                slot=config.GENESIS_SLOT,
+            ),
         ),
         historical_roots=(),
 

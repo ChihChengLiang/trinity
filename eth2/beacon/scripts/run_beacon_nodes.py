@@ -185,7 +185,7 @@ class Node:
 
 
 async def main():
-    num_validators = 5
+    num_validators = 20
     time_bob_wait_for_alice = 15
     genesis_delay = time_bob_wait_for_alice * 3
 

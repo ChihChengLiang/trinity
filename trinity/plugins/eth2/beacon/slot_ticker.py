@@ -23,7 +23,7 @@ from trinity.endpoint import (
     TrinityEventBusEndpoint,
 )
 
-DEFAULT_CHECK_FREQUENCY = 6
+DEFAULT_CHECK_FREQUENCY = 100
 
 
 class SlotTickEvent(BaseEvent):

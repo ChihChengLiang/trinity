@@ -43,7 +43,11 @@ class SerenityStateTransition(BaseStateTransition):
                                state: BeaconState,
                                block: BaseBeaconBlock,
                                check_proposer_signature: bool=True) -> BeaconState:
-        if state.slot >= block.slot:
+        if state.slot > block.slot:
+            return state
+        elif state.slot == block.slot:
+            if state.latest_block_header.signing_root != block.signing_root:
+                state = self.per_block_transition(state, block, check_proposer_signature)
             return state
 
         for _ in range(state.slot, block.slot):

@@ -253,7 +253,9 @@ class BeaconState(ssz.Serializable):
             latest_active_index_roots=(ZERO_HASH32,) * latest_active_index_roots_length,
             latest_slashed_balances=(Gwei(0),) * latest_slashed_exit_length,
             latest_block_header=get_temporary_block_header(
-                BeaconBlock.create_empty_block(genesis_slot),
+                BeaconBlock.create_empty_block().copy(
+                    slot=genesis_slot,
+                ),
             ),
             historical_roots=(),
 
