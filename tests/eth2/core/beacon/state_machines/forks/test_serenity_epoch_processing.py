@@ -453,7 +453,7 @@ def test_process_justification(monkeypatch,
 )
 def test_process_crosslinks(
         random,
-        n_validators_state,
+        genesis_state,
         config,
         slots_per_epoch,
         target_committee_size,
@@ -473,7 +473,7 @@ def test_process_crosslinks(
         )
         for shard in range(shard_count)
     ])
-    state = n_validators_state.copy(
+    state = genesis_state.copy(
         slot=current_slot,
         latest_crosslinks=genesis_crosslinks,
     )
@@ -688,7 +688,7 @@ def test_process_crosslinks(
 )
 def test_process_rewards_and_penalties_for_finality(
         monkeypatch,
-        n_validators_state,
+        genesis_state,
         config,
         slots_per_epoch,
         target_committee_size,
@@ -727,13 +727,13 @@ def test_process_rewards_and_penalties_for_finality(
         mock_get_beacon_proposer_index
     )
 
-    validators = n_validators_state.validators
+    validators = genesis_state.validators
     for index in penalized_validator_indices:
         validator_record = validators[index].copy(
             slashed=True,
         )
         validators = update_tuple_item(validators, index, validator_record)
-    state = n_validators_state.copy(
+    state = genesis_state.copy(
         slot=current_slot,
         finalized_epoch=finalized_epoch,
         validators=validators,
@@ -853,7 +853,7 @@ def test_process_rewards_and_penalties_for_finality(
 )
 def test_process_rewards_and_penalties_for_crosslinks(
         random,
-        n_validators_state,
+        genesis_state,
         config,
         slots_per_epoch,
         target_committee_size,
@@ -865,7 +865,7 @@ def test_process_rewards_and_penalties_for_crosslinks(
         sample_attestation_data_params,
         sample_pending_attestation_record_params):
     previous_epoch = current_slot // slots_per_epoch - 1
-    state = n_validators_state.copy(
+    state = genesis_state.copy(
         slot=current_slot,
     )
     # Compute previous epoch committees
@@ -1107,10 +1107,10 @@ def test_check_if_update_validators(genesis_state,
     ]
 )
 def test_update_validators(n,
-                           n_validators_state,
+                           genesis_state,
                            config,
                            slots_per_epoch):
-    validators = list(n_validators_state.validators)
+    validators = list(genesis_state.validators)
     activating_index = n
     exiting_index = 0
 
@@ -1121,15 +1121,15 @@ def test_update_validators(n,
         config=config,
     )
 
-    exiting_validator = n_validators_state.validators[exiting_index].copy(
+    exiting_validator = genesis_state.validators[exiting_index].copy(
         exit_epoch=FAR_FUTURE_EPOCH,
     )
 
     validators[exiting_index] = exiting_validator
     validators.append(activating_validator)
-    state = n_validators_state.copy(
+    state = genesis_state.copy(
         validators=validators,
-        balances=n_validators_state.balances + (config.MAX_EFFECTIVE_BALANCE,),
+        balances=genesis_state.balances + (config.MAX_EFFECTIVE_BALANCE,),
     )
 
     state = update_validators(state, config)
@@ -1147,7 +1147,7 @@ def test_update_validators(n,
 
 @pytest.mark.parametrize(
     (
-        'num_validators, slots_per_epoch, target_committee_size, shard_count,'
+        'validator_count, slots_per_epoch, target_committee_size, shard_count,'
         'epochs_per_historical_vector, min_seed_lookahead, state_slot,'
         'need_to_update,'
         'num_shards_in_committees,'
@@ -1285,7 +1285,7 @@ def test_compute_total_penalties(genesis_state,
 
 @pytest.mark.parametrize(
     (
-        'num_validators',
+        'validator_count',
         'slots_per_epoch',
         'genesis_slot',
         'current_epoch',
@@ -1301,7 +1301,7 @@ def test_compute_total_penalties(genesis_state,
     (
         'total_penalties',
         'total_balance',
-        'min_penalty_quotient',
+        'min_slashing_penalty_quotient',
         'expected_penalty',
     ),
     [
@@ -1309,13 +1309,13 @@ def test_compute_total_penalties(genesis_state,
             10**9,  # 1 ETH
             (32 * 10**9 * 10),
             2**5,
-            # effective_balance // MIN_PENALTY_QUOTIENT,
+            # effective_balance // MIN_SLASHING_PENALTY_QUOTIENT,
             32 * 10**9 // 2**5,
         ),
         (
             10**9,  # 1 ETH
             (32 * 10**9 * 10),
-            2**10,  # Make MIN_PENALTY_QUOTIENT greater
+            2**10,  # Make MIN_SLASHING_PENALTY_QUOTIENT greater
             # effective_balance * min(total_penalties * 3, total_balance) // total_balance,
             32 * 10**9 * min(10**9 * 3, (32 * 10**9 * 10)) // (32 * 10**9 * 10),
         ),
@@ -1345,7 +1345,7 @@ def test_compute_individual_penalty(genesis_state,
 
 @pytest.mark.parametrize(
     (
-        'num_validators',
+        'validator_count',
         'slots_per_epoch',
         'genesis_slot',
         'current_epoch',
@@ -1393,7 +1393,7 @@ def test_process_slashings(genesis_state,
 
 @pytest.mark.parametrize(
     (
-        'num_validators',
+        'validator_count',
         'slots_per_epoch',
         'genesis_slot',
         'current_epoch',
@@ -1456,7 +1456,7 @@ def test_process_exit_queue_eligible(genesis_state,
 
 @pytest.mark.parametrize(
     (
-        'num_validators',
+        'validator_count',
         'slots_per_epoch',
         'genesis_slot',
         'current_epoch',
@@ -1487,7 +1487,7 @@ def test_process_exit_queue_eligible(genesis_state,
 def test_process_exit_queue(genesis_state,
                             config,
                             current_epoch,
-                            num_validators,
+                            validator_count,
                             max_exit_dequeues_per_epoch,
                             min_validator_withdrawability_delay,
                             num_eligible_validators,
@@ -1497,7 +1497,7 @@ def test_process_exit_queue(genesis_state,
     )
 
     # Set eligible validators
-    assert num_eligible_validators <= num_validators
+    assert num_eligible_validators <= validator_count
     for i in range(num_eligible_validators):
         state = state.update_validators(
             i,
@@ -1515,7 +1515,7 @@ def test_process_exit_queue(genesis_state,
     )
     filtered_indices = sorted_indices[:min(max_exit_dequeues_per_epoch, num_eligible_validators)]
 
-    for i in range(num_validators):
+    for i in range(validator_count):
         if i in set(filtered_indices):
             # Check if they got prepared for withdrawal
             assert (
@@ -1571,7 +1571,7 @@ def test_update_active_index_roots(genesis_state,
 
 @pytest.mark.parametrize(
     (
-        'num_validators,'
+        'validator_count,'
         'slots_per_epoch'
     ),
     [
