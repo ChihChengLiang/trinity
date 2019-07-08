@@ -579,11 +579,7 @@ class BCCReceiveServer(BaseReceiveServer):
         state = state_machine.state
         for attestation in self.attestation_pool.get_all():
             data = attestation.data
-            attestation_slot = (
-                get_attestation_data_slot(state, data, config)
-                if attestation.slot is None
-                else attestation.slot
-            )
+            attestation_slot = get_attestation_data_slot(state, data, config)
             try:
                 validate_attestation_slot(
                     attestation_slot,

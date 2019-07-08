@@ -17,7 +17,6 @@ from .attestation_data import (
 
 from eth2.beacon.typing import (
     Bitfield,
-    Slot,
     ValidatorIndex,
 )
 from eth2.beacon.constants import EMPTY_SIGNATURE
@@ -32,7 +31,6 @@ from .defaults import (
 
 
 class Attestation(ssz.Serializable):
-    slot: Slot
 
     fields = [
         ('aggregation_bitfield', byte_list),
@@ -45,7 +43,6 @@ class Attestation(ssz.Serializable):
                  aggregation_bitfield: Bitfield=default_bitfield,
                  data: AttestationData=default_attestation_data,
                  custody_bitfield: Bitfield=default_bitfield,
-                 slot: Slot=None,
                  signature: BLSSignature=EMPTY_SIGNATURE) -> None:
         super().__init__(
             aggregation_bitfield,
@@ -53,7 +50,6 @@ class Attestation(ssz.Serializable):
             custody_bitfield,
             signature,
         )
-        self.slot = slot
 
     def __repr__(self) -> str:
         return f"<Attestation {self.data} >"

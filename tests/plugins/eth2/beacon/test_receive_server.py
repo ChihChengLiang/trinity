@@ -30,6 +30,7 @@ from eth2.beacon.typing import (
 from eth2.beacon.chains.testnet import TestnetChain as _TestnetChain
 from eth2.beacon.fork_choice import higher_slot_scoring
 from eth2.beacon.types.attestations import Attestation
+from eth2.beacon.types.attestation_data import AttestationData
 from eth2.beacon.types.blocks import (
     BaseBeaconBlock,
 )
@@ -607,11 +608,20 @@ async def test_bcc_receive_server_get_ready_attestations(
             slot = XIAO_LONG_BAO_CONFIG.GENESIS_SLOT
         state = MockState()
 
+        def mock_get_attestation_data_slot(state, data, config):
+            return data.slot
         mocker.patch("eth2.beacon.state_machines.base.BeaconStateMachine.state", state)
+        mocker.patch(
+            "trinity.protocol.bcc.servers.get_attestation_data_slot",
+            mock_get_attestation_data_slot,
+        )
         attesting_slot = XIAO_LONG_BAO_CONFIG.GENESIS_SLOT
-        a1 = Attestation(slot=attesting_slot)
-        a2 = Attestation(slot=attesting_slot, signature=b'\x56' * 96)
-        a3 = Attestation(slot=attesting_slot + 1, signature=b'\x78' * 96)
+        a1 = Attestation(data=AttestationData())
+        a1.data.slot = attesting_slot
+        a2 = Attestation(signature=b'\x56' * 96, data=AttestationData())
+        a2.data.slot = attesting_slot
+        a3 = Attestation(signature=b'\x78' * 96, data=AttestationData())
+        a3.data.slot = attesting_slot + 1
         bob_recv_server.attestation_pool.batch_add([a1, a2, a3])
 
         # Workaround: add a fake head state slot
