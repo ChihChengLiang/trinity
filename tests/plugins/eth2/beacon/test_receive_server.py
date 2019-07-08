@@ -592,43 +592,44 @@ def test_attestation_pool():
     assert len(pool._pool) == 0
 
 
-@pytest.mark.xfail
 @pytest.mark.asyncio
 async def test_bcc_receive_server_get_ready_attestations(
         request,
         event_loop,
-        event_bus):
+        event_bus,
+        mocker):
     async with get_peer_and_receive_server(
         request,
         event_loop,
         event_bus,
     ) as (alice, _, bob_recv_server, _):
+        class MockState:
+            slot = XIAO_LONG_BAO_CONFIG.GENESIS_SLOT
+        state = MockState()
+
+        mocker.patch("eth2.beacon.state_machines.base.BeaconStateMachine.state", state)
         attesting_slot = XIAO_LONG_BAO_CONFIG.GENESIS_SLOT
-        a1 = Attestation()
-        a2 = a1  # TODO: Make it same attesting slot with a1
-        a3 = a1  # TODO: Make it a1's attesting slot + 1
+        a1 = Attestation(slot=attesting_slot)
+        a2 = Attestation(slot=attesting_slot, signature=b'\x56' * 96)
+        a3 = Attestation(slot=attesting_slot + 1, signature=b'\x78' * 96)
         bob_recv_server.attestation_pool.batch_add([a1, a2, a3])
 
         # Workaround: add a fake head state slot
         # so `get_state_machine` wont's trigger `HeadStateSlotNotFound` exception
         bob_recv_server.chain.chaindb._add_head_state_slot_lookup(XIAO_LONG_BAO_CONFIG.GENESIS_SLOT)
 
-        ready_attestations = bob_recv_server.get_ready_attestations(
-            attesting_slot + XIAO_LONG_BAO_CONFIG.MIN_ATTESTATION_INCLUSION_DELAY - 1,
-        )
+        state.slot = attesting_slot + XIAO_LONG_BAO_CONFIG.MIN_ATTESTATION_INCLUSION_DELAY - 1
+        ready_attestations = bob_recv_server.get_ready_attestations()
         assert len(ready_attestations) == 0
 
-        ready_attestations = bob_recv_server.get_ready_attestations(
-            attesting_slot + XIAO_LONG_BAO_CONFIG.MIN_ATTESTATION_INCLUSION_DELAY,
-        )
+        state.slot = attesting_slot + XIAO_LONG_BAO_CONFIG.MIN_ATTESTATION_INCLUSION_DELAY
+        ready_attestations = bob_recv_server.get_ready_attestations()
         assert set([a1, a2]) == set(ready_attestations)
 
-        ready_attestations = bob_recv_server.get_ready_attestations(
-            attesting_slot + XIAO_LONG_BAO_CONFIG.MIN_ATTESTATION_INCLUSION_DELAY + 1,
-        )
+        state.slot = attesting_slot + XIAO_LONG_BAO_CONFIG.MIN_ATTESTATION_INCLUSION_DELAY + 1
+        ready_attestations = bob_recv_server.get_ready_attestations()
         assert set([a1, a2, a3]) == set(ready_attestations)
 
-        ready_attestations = bob_recv_server.get_ready_attestations(
-            attesting_slot + XIAO_LONG_BAO_CONFIG.SLOTS_PER_EPOCH + 1,
-        )
+        state.slot = attesting_slot + XIAO_LONG_BAO_CONFIG.SLOTS_PER_EPOCH + 1
+        ready_attestations = bob_recv_server.get_ready_attestations()
         assert set([a3]) == set(ready_attestations)

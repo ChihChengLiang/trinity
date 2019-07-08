@@ -573,13 +573,17 @@ class BCCReceiveServer(BaseReceiveServer):
         return self._is_block_root_seen(block_root=block.signing_root)
 
     @to_tuple
-    def get_ready_attestations(self, inclusion_slot: Slot) -> Iterable[Attestation]:
+    def get_ready_attestations(self) -> Iterable[Attestation]:
         state_machine = self.chain.get_state_machine()
         config = state_machine.config
         state = state_machine.state
         for attestation in self.attestation_pool.get_all():
             data = attestation.data
-            attestation_slot = get_attestation_data_slot(state, data, config)
+            attestation_slot = (
+                get_attestation_data_slot(state, data, config)
+                if attestation.slot is None
+                else attestation.slot
+            )
             try:
                 validate_attestation_slot(
                     attestation_slot,
