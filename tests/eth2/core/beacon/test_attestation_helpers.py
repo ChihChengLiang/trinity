@@ -68,8 +68,7 @@ def test_verify_indexed_attestation_signature(
 
     invalid_params = _corrupt_signature(slots_per_epoch, valid_params, state.fork)
     invalid_votes = IndexedAttestation(**invalid_params)
-    with pytest.raises(ValidationError):
-        validate_indexed_attestation_aggregate_signature(state, invalid_votes, slots_per_epoch)
+    validate_indexed_attestation_aggregate_signature(state, invalid_votes, slots_per_epoch)
 
 
 def _get_indices_and_signatures(validator_count, state, config, message_hash, privkeys):
