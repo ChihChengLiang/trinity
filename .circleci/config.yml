@@ -129,7 +129,7 @@ eth2_fixtures: &eth2_fixtures
           git lfs install
           mkdir -p ~/.ssh
           ssh-keyscan -H github.com >> ~/.ssh/known_hosts
-          ssh git@github.com git-lfs-authenticate "hwwhww/trinity" download
+          ssh git@github.com git-lfs-authenticate "ethereum/trinity" download
           cd eth2-fixtures && git lfs pull
     - run:
         name: install dependencies
