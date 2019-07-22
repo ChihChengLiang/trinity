@@ -30,9 +30,7 @@ from eth_utils import (
 )
 
 from eth2._utils.funcs import constantly
-from eth2._utils.ssz import (
-    validate_imported_block_unchanged,
-)
+
 from eth2.beacon.db.chain import (
     BaseBeaconChainDB,
     BeaconChainDB,
@@ -423,11 +421,10 @@ class BeaconChain(BaseBeaconChain):
 
         state_machine = self.get_state_machine(prev_state_slot)
 
-        state, imported_block = state_machine.import_block(block)
-
-        # Validate the imported block.
-        if perform_validation:
-            validate_imported_block_unchanged(imported_block, block)
+        state, imported_block = state_machine.import_block(
+            block,
+            perform_validation=perform_validation,
+        )
 
         # TODO: Now it just persists all state. Should design how to clean up the old state.
         self.chaindb.persist_state(state)

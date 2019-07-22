@@ -27,6 +27,9 @@ from eth2.beacon.typing import (
 from .state_transitions import (
     BaseStateTransition,
 )
+from eth2._utils.ssz import (
+    validate_imported_block_unchanged,
+)
 
 
 class BaseBeaconStateMachine(Configurable, ABC):
@@ -153,15 +156,20 @@ class BeaconStateMachine(BaseBeaconStateMachine):
     #
     def import_block(self,
                      block: BaseBeaconBlock,
-                     check_proposer_signature: bool=True) -> Tuple[BeaconState, BaseBeaconBlock]:
+                     check_proposer_signature: bool=True,
+                     perform_validation: bool=True) -> Tuple[BeaconState, BaseBeaconBlock]:
         state = self.state_transition.apply_state_transition(
             self.state,
             block=block,
             check_proposer_signature=check_proposer_signature,
         )
 
-        block = block.copy(
+        imported_block = block.copy(
             state_root=state.hash_tree_root,
         )
 
-        return state, block
+        # Validate the imported block.
+        if perform_validation:
+            validate_imported_block_unchanged(imported_block, block)
+
+        return state, imported_block
