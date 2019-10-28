@@ -30,6 +30,7 @@ from p2p.cancellable import CancellableMixin
 class ServiceEvents(ServiceEventsAPI):
     def __init__(self) -> None:
         self.started = asyncio.Event()
+        self.ready = asyncio.Event()
         self.stopped = asyncio.Event()
         self.cleaned_up = asyncio.Event()
         self.cancelled = asyncio.Event()
@@ -354,6 +355,7 @@ class BaseService(CancellableMixin, AsyncioServiceAPI):
         """
         Pause until this service is cancelled
         """
+        self.events.ready.set()
         await self.wait(self.events.cancelled.wait())
 
     async def threadsafe_cancel(self) -> None:
