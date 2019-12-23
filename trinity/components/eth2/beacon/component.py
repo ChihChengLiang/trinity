@@ -26,6 +26,7 @@ from trinity.boot_info import BootInfo
 from trinity.config import BeaconAppConfig
 from trinity.db.manager import DBClient
 from trinity.extensibility import AsyncioIsolatedComponent
+from trinity.http.handlers.api_handler import APIHandler
 from trinity.http.handlers.metrics_handler import MetricsHandler
 from trinity.http.main import (
     HTTPServer,
@@ -70,13 +71,24 @@ class BeaconNodeComponent(AsyncioIsolatedComponent):
         arg_parser.add_argument(
             "--enable-metrics",
             action="store_true",
-            help="Enables the HTTP Server",
+            help="Enables the Metrics Server",
         )
         arg_parser.add_argument(
             "--metrics-port",
             type=int,
             help="Metrics server port",
             default=8008,
+        )
+        arg_parser.add_argument(
+            "--enable-api",
+            action="store_true",
+            help="Enables the API Server",
+        )
+        arg_parser.add_argument(
+            "--api-port",
+            type=int,
+            help="API server port",
+            default=5005,
         )
 
     @property
@@ -187,16 +199,23 @@ class BeaconNodeComponent(AsyncioIsolatedComponent):
                 genesis_config=chain_config.genesis_config,
                 token=libp2p_node.cancel_token,
             )
-            http_server = HTTPServer(
+            metrics_server = HTTPServer(
                 handler=MetricsHandler.handle(chain)(event_bus),
                 port=boot_info.args.metrics_port,
+            )
+            api_server = HTTPServer(
+                handler=APIHandler.handle(chain)(event_bus),
+                port=boot_info.args.api_port,
             )
 
             services: Tuple[BaseService, ...] = (
                 libp2p_node, receive_server, slot_ticker, validator, syncer
             )
             if boot_info.args.enable_metrics:
-                services += (http_server,)
+                services += (metrics_server,)
+
+            if boot_info.args.enable_api:
+                services += (api_server,)
 
             async with AsyncExitStack() as stack:
                 for service in services:
