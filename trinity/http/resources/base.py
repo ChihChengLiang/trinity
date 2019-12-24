@@ -35,7 +35,7 @@ def get_method(
     async def wrapper(self: TBaseResource, request: web.Request) -> Any:
         if request.method != "GET":
             raise APIServerError(f"Wrong HTTP method, should be GET, got {request.method}")
-        return await func(self, request)
+        return await func(self, **request.query)
 
     return wrapper
 
@@ -46,6 +46,6 @@ def post_method(
     async def wrapper(self: TBaseResource, request: web.Request) -> Any:
         if request.method != "POST":
             raise APIServerError(f"Wrong HTTP method, should be GET, got {request.method}")
-        return await func(self, request)
+        return await func(self, **request.query)
 
     return wrapper

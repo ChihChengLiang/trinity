@@ -11,30 +11,32 @@ from eth2.beacon.types.blocks import BeaconBlock
 from eth2.beacon.typing import SigningRoot, Slot
 from trinity.http.resources.base import BaseResource, get_method
 from trinity.http.exceptions import APIServerError
-
+from trinity.rpc.format import (
+    format_params,
+    to_int_if_hex,
+)
 
 class Beacon(BaseResource):
     @get_method
-    async def head(self, request: web.Request) -> Dict[str, Any]:
+    async def head(self, **kwargs) -> Dict[str, Any]:
         return to_formatted_dict(self.chain.get_canonical_head(), sedes=BeaconBlock)
 
     @get_method
-    async def block(self, request: web.Request) -> Dict[str, Any]:
-        if 'slot' in request.query:
-            slot = Slot(int(request.query['slot']))
+    @format_params(to_int_if_hex, decode_hex)
+    async def block(self, slot: Slot=None, root: SigningRoot=None, **kwargs) -> Dict[str, Any]:
+        if slot is not None:
             block = self.chain.get_canonical_block_by_slot(slot)
-        elif 'root' in request.query:
-            root = SigningRoot(Hash32(decode_hex(request.query['root'])))
+        elif root is not None:
             block = self.chain.get_block_by_root(root)
 
         return to_formatted_dict(block, sedes=BeaconBlock)
 
     @get_method
-    async def state(self, request: web.Request) -> Dict[str, Any]:
-        if 'slot' in request.query:
-            slot = Slot(int(request.query['slot']))
+    @format_params(to_int_if_hex, decode_hex)
+    async def state(self,slot: Slot=None, root: SigningRoot=None, **kwargs) -> Dict[str, Any]:
+        if slot is not None:
             state = self.chain.get_state_by_slot(slot)
-        elif 'root' in request.query:
+        elif root is not None:
             # TODO
             pass
         else:
