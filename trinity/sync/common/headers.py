@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 import asyncio
 from concurrent.futures import CancelledError
+import contextlib
 from operator import attrgetter, itemgetter
 from random import randrange
 from typing import (
@@ -16,9 +17,6 @@ from typing import (
     Type,
 )
 
-from async_generator import (
-    asynccontextmanager,
-)
 from cancel_token import CancelToken, OperationCancelled
 from eth_typing import (
     BlockIdentifier,
@@ -924,7 +922,7 @@ class BaseHeaderChainSyncer(BaseService, HeaderSyncerAPI, Generic[TChainPeer]):
                 async with self._get_skeleton_syncer(peer) as syncer:
                     await self._full_skeleton_sync(syncer)
 
-    @asynccontextmanager
+    @contextlib.asynccontextmanager
     async def _get_skeleton_syncer(
             self, peer: TChainPeer) -> AsyncIterator[SkeletonSyncer[TChainPeer]]:
         if self._is_syncing_skeleton:

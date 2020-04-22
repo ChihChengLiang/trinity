@@ -7,12 +7,12 @@ from argparse import (
     _SubParsersAction,
 )
 import asyncio
+import contextlib
 import logging
 import pathlib
 import signal
 from typing import AsyncIterator, Type, TYPE_CHECKING, Union
 
-from async_generator import asynccontextmanager
 
 from lahja import AsyncioEndpoint, ConnectionConfig, EndpointAPI, TrioEndpoint
 
@@ -125,7 +125,7 @@ async def _cleanup_component_task(component_name: str, task: "asyncio.Future[Non
     logger.debug("Stopped component: %s", component_name)
 
 
-@asynccontextmanager
+@contextlib.asynccontextmanager
 async def run_component(component: ComponentAPI) -> AsyncIterator[None]:
     task = asyncio.ensure_future(component.run())
     logger.debug("Starting component: %s", component.name)
@@ -135,7 +135,7 @@ async def run_component(component: ComponentAPI) -> AsyncIterator[None]:
         await _cleanup_component_task(component.name, task)
 
 
-@asynccontextmanager
+@contextlib.asynccontextmanager
 async def _run_asyncio_component_in_proc(
         component_type: Type['AsyncioIsolatedComponent'],
         event_bus: EndpointAPI,
@@ -152,7 +152,7 @@ async def _run_asyncio_component_in_proc(
         await _cleanup_component_task(component_type.name, task)
 
 
-@asynccontextmanager
+@contextlib.asynccontextmanager
 async def _run_trio_component_in_proc(
         component_type: Type['TrioIsolatedComponent'],
         event_bus: EndpointAPI,
@@ -170,7 +170,7 @@ async def _run_trio_component_in_proc(
         logger.debug("Stopped component: %s", component_type.name)
 
 
-@asynccontextmanager
+@contextlib.asynccontextmanager
 async def _run_standalone_component(
     component_type: Union[Type['TrioIsolatedComponent'], Type['AsyncioIsolatedComponent']],
     app_identifier: str,

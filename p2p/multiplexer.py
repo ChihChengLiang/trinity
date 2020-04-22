@@ -1,5 +1,6 @@
 import asyncio
 import collections
+import contextlib
 import time
 from typing import (
     Any,
@@ -15,8 +16,6 @@ from typing import (
 
 import snappy
 from cached_property import cached_property
-
-from async_generator import asynccontextmanager
 
 from eth_utils import ValidationError
 from eth_utils.toolz import cons
@@ -289,7 +288,7 @@ class Multiplexer(MultiplexerAPI):
     #
     # Message reading and streaming API
     #
-    @asynccontextmanager
+    @contextlib.asynccontextmanager
     async def multiplex(self) -> AsyncIterator[None]:
         """
         API for running the background task that feeds individual protocol

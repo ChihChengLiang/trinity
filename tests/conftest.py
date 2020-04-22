@@ -1,12 +1,10 @@
 import asyncio
+import contextlib
 import os
 from pathlib import Path
 import tempfile
 import uuid
 
-from async_generator import (
-    asynccontextmanager,
-)
 import pytest
 
 from async_service import background_asyncio_service
@@ -97,7 +95,7 @@ def event_loop():
         loop.close()
 
 
-@asynccontextmanager
+@contextlib.asynccontextmanager
 async def make_networking_event_bus():
     # Tests run concurrently, therefore we need unique IPC paths
     ipc_path = Path(f"networking-{uuid.uuid4()}.ipc")
