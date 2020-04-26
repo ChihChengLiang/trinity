@@ -121,7 +121,7 @@ deps = {
         "asks>=2.3.6,<3",  # validator client
         "eth-keyfile",  # validator client
     ],
-    'eth2-extra': [
+    "eth2-extra": [
         "milagro-bls-binding==0.1.4",
     ],
     'eth2-lint': [
