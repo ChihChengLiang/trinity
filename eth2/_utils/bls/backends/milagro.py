@@ -3,15 +3,13 @@ from typing import Iterator, Sequence, Tuple
 from eth_typing import BLSPubkey, BLSSignature, Hash32
 from eth_utils import to_tuple
 from milagro_bls_binding import (
-    PrivToPub as priv_to_pub,
-    Sign as sign,
-    Verify as verify,
-    Aggregate as aggregate,
-    _AggregatePKs as aggregate_pks,
-    FastAggregateVerify as fast_aggregate_verify,
-    AggregateVerify as aggregate_verify
+    aggregate_pubkeys,
+    aggregate_signatures,
+    privtopub,
+    sign,
+    verify,
+    verify_multiple,
 )
-
 from py_ecc.bls.typing import Domain
 
 from eth2._utils.bls.backends.base import BaseBLSBackend
@@ -38,7 +36,7 @@ def filter_non_empty_pair(
 class MilagroBackend(BaseBLSBackend):
     @staticmethod
     def privtopub(k: int) -> BLSPubkey:
-        return priv_to_pub(k.to_bytes(48, "big"))
+        return privtopub(k.to_bytes(48, "big"))
 
     @staticmethod
     def sign(message_hash: Hash32, privkey: int, domain: Domain) -> BLSSignature:
@@ -61,14 +59,14 @@ class MilagroBackend(BaseBLSBackend):
         )
         if len(non_empty_signatures) == 0:
             return EMPTY_SIGNATURE
-        return aggregate(list(non_empty_signatures))
+        return aggregate_signatures(list(non_empty_signatures))
 
     @staticmethod
     def aggregate_pubkeys(pubkeys: Sequence[BLSPubkey]) -> BLSPubkey:
         non_empty_pubkeys = tuple(key for key in pubkeys if key != EMPTY_PUBKEY)
         if len(non_empty_pubkeys) == 0:
             return EMPTY_PUBKEY
-        return aggregate_pks(list(non_empty_pubkeys))
+        return aggregate_pubkeys(list(non_empty_pubkeys))
 
     @staticmethod
     def verify_multiple(
