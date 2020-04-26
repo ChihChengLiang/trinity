@@ -122,7 +122,7 @@ deps = {
         "eth-keyfile",  # validator client
     ],
     'eth2-extra': [
-        "milagro-bls-binding==0.1.3",
+        "milagro-bls-binding==0.1.4",
     ],
     'eth2-lint': [
         "black==19.3b0",
